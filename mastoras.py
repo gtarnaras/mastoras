@@ -19,9 +19,9 @@ def run_checks(remote_server_username, remote_server_ip):
         msg = "##################### {0.command!r} on {0.connection.host} #####################\n{0.stdout}"
         print(msg.format(result))
 
-def validate_ip(ip_str):
+def validate_ip(ip_to_validate):
     reg = r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
-    if re.match(reg, ip_str):
+    if re.match(reg, ip_to_validate):
         return True
     else:
         print("Invalid IP address, please check your input and try again")
