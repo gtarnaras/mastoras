@@ -4,3 +4,8 @@
 
 # mastoras
 A framework to help you with your infrstructure/applications troubleshooting
+
+## Installation
+You need to have the following packages installed:
+
+fabric: pip install fabric
