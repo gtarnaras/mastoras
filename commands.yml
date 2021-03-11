@@ -1,0 +1,12 @@
+---
+fs_checks:
+  - 'uname -a'
+  - 'whoami'
+  - 'df -h'
+
+log_checks:
+  - 'tail -10 /var/log/messages'
+
+service_checks:
+  - 'ps -ef | grep java'
+  - 'uptime'
