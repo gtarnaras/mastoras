@@ -9,24 +9,23 @@ import sys
 import argparse
 import re
 import yaml
+import pprint
 from fabric import Connection
 from jira import JIRA
 
-def run_checks(remote_server_username, remote_server_ip, private_rsa_key, remote_logfile, **remote_commands):
+def run_checks(con_details, **commands_to_run):
     remote_report= dict()
-    for check_types in remote_commands:
+    for check_types in commands_to_run:
         try:
-            for i in remote_commands[check_types]:
-                with Connection(user=remote_server_username, host=remote_server_ip, connect_kwargs={"key_filename": private_rsa_key}) as conn:
+            for i in commands_to_run[check_types]:
+                with Connection(user=con_details.username, host=con_details.ip, connect_kwargs={"key_filename": con_details.private_key}) as conn:
                     result = conn.run(i, hide=True)
                     msg = "##################### {0.command!r} on {0.connection.host} #####################\n\n{0.stdout}"
                     print(msg.format(result))
                     remote_report[i] = result.stdout
         except TypeError:
             pass
-    pprint.pprint(remote_report)
-    with open(remote_logfile, "w+") as log_file:
-        pprint.pprint(remote_report, log_file)
+    return remote_report
 
 def update_jira_ticket(jira_ticket_nr, jira_report_comment, jira_report_attachment_path):
     jira = JIRA(basic_auth=('USER', 'PASS'), options={'server':'https://JIRA-IP', 'verify':False})
@@ -44,9 +43,6 @@ def validate_ip(ip_to_validate):
         sys.exit(1)
         return False
 
-def validate(ip_from_argparse):
-    validate_ip(ip_from_argparse)
-
 def parse_args():
     parser = argparse.ArgumentParser(description='Simple script to help you with your troubleshooting.')
     parser.add_argument('--username', required=True, help='Specify the remote server logon username')
@@ -59,17 +55,17 @@ def start(args):
     remote_report_logs_path="/tmp/"
     remote_report_logs_name="test.log"
     remote_report_logs=remote_report_logs_path+remote_report_logs_name
-    validate(args.ip)
+    validate_ip(args.ip)
     with open('commands.yml') as f:
         commands_dict = yaml.safe_load(f)
-        print(commands_dict)
-        ret = run_checks(args.username, args.ip, **commands_dict)
-    ret = run_checks(args.username, args.ip, args.private_key, remote_report_logs)
-    if args.ticket is not None:
-        update_jira_ticket(args.ticket, "{code:java}Report ran on node: "+args.ip+" is attached on this ticket with name "+remote_report_logs_name+"{code}", remote_report_logs)
+        ret = run_checks( args, **commands_dict)
+        if args.ticket is not None:
+            with open(remote_report_logs, "w+") as log_file:
+                pprint.pprint(ret, log_file)
+            update_jira_ticket(args.ticket, "{code:java}Report ran on node: "+args.ip+" is attached on this ticket with name "+remote_report_logs_name+"{code}", remote_report_logs)
     return ret
 
 if __name__ == '__main__':
     parsed_args = parse_args()
     ret = start(parsed_args)
-    sys.exit(ret)
+    # sys.exit(ret)
